@@ -78,9 +78,9 @@
     const data = await response.json();
 
     if (data.mensagem) {
-        // Redireciona para a página "desjogando.html" com os dados na URL
-        window.location.href = `desjogando.html?nome=${nome}&saldo=${data.saldo}`;
-    } else {
+    // Redireciona para a página "desjogando.html" com os dados na URL
+    window.location.href = `/static/desjogando.html?nome=${nome}&saldo=${data.saldo}`;
+} else {
         document.getElementById('result').innerText = "Erro ao fazer login.";
     }
 }
