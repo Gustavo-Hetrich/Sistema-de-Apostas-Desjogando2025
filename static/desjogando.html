@@ -150,19 +150,21 @@
     </div>
 
     <script>
+        let nomeUsuario = "";
+
         async function carregarSaldo() {
             const params = new URLSearchParams(window.location.search);
-            const nome = params.get('nome');
+            nomeUsuario = params.get('nome');
 
-            if (!nome) {
+            if (!nomeUsuario) {
                 document.getElementById("error").innerText = "Erro: Usuário não encontrado.";
                 return;
             }
 
-            document.getElementById('username').innerText = nome;
+            document.getElementById('username').innerText = nomeUsuario;
 
             try {
-                const response = await fetch(`/saldo/${nome}`);
+                const response = await fetch(`https://seu-servidor.com/saldo/${nomeUsuario}`);
 
                 if (!response.ok) {
                     throw new Error("Erro na resposta do servidor.");
@@ -189,7 +191,7 @@
             }
         }
 
-        function fazerAposta() {
+        async function fazerAposta() {
             const valor = document.getElementById('valorAposta').value;
             const aposta1 = document.getElementById('aposta1').checked;
             const aposta2 = document.getElementById('aposta2').checked;
@@ -204,11 +206,33 @@
                 return;
             }
 
-            const escolha = aposta1 ? "1" : "2";
-            alert(`Aposta de ${valor} pontos feita na opção ${escolha}!`);
+            const escolha = aposta1 ? 1 : 2;
+
+            try {
+                const response = await fetch("https://seu-servidor.com/apostar", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        nome: nomeUsuario,
+                        valor: parseInt(valor),
+                        escolha: escolha
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.detail || "Erro ao processar a aposta.");
+                }
+
+                alert(result.mensagem);
+                document.getElementById('saldo').innerText = result.novo_saldo;
+
+            } catch (error) {
+                alert("Erro: " + error.message);
+            }
         }
 
-        // Carregar saldo ao entrar na página
         carregarSaldo();
     </script>
 </body>
