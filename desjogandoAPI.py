@@ -4,6 +4,8 @@ import asyncpg
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi import HTTPException
+
 
 app = FastAPI()
 
@@ -120,3 +122,38 @@ async def finalizar_aposta():
 @app.get("/aposta/status")
 async def status_aposta():
     return {"status": estado_aposta}
+
+@app.post("/apostar")
+async def apostar(nome: str, valor: int, escolha: int):
+    conn = await connect_to_db()
+    nome = nome.lower()
+
+    # Verifica se o usuário existe
+    result = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
+    if result is None:
+        await conn.close()
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    saldo_atual = result["saldo"]
+
+    # Verifica se o saldo é suficiente para a aposta
+    if saldo_atual < valor:
+        await conn.close()
+        raise HTTPException(status_code=400, detail="Saldo insuficiente.")
+
+    # Simula a lógica da aposta (aqui você pode implementar a lógica real)
+    import random
+    resultado_aposta = random.choice([1, 2])  # Escolhe aleatoriamente entre 1 e 2
+
+    if escolha == resultado_aposta:
+        novo_saldo = saldo_atual + valor  # Ganha o valor apostado
+        mensagem = f"Parabéns! Você ganhou {valor} pontos."
+    else:
+        novo_saldo = saldo_atual - valor  # Perde o valor apostado
+        mensagem = f"Que pena! Você perdeu {valor} pontos."
+
+    # Atualiza o saldo do usuário no banco de dados
+    await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
+    await conn.close()
+
+    return {"mensagem": mensagem, "novo_saldo": novo_saldo}
