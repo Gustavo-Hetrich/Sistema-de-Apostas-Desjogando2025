@@ -36,13 +36,12 @@
             width: 100%;
             background-color: #c7091275;
             color: white;
-            width: 100%;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
         button:hover {
-            background-color: #c7091275;
+            background-color: #b30810;
         }
         .result {
             margin-top: 20px;
@@ -60,31 +59,28 @@
 
     <script>
         async function login() {
-    const nome = document.getElementById('nome').value;
+            const nome = document.getElementById('nome').value.trim();
 
-    if (!nome) {
-        document.getElementById('result').innerText = "Por favor, digite um nome.";
-        return;
-    }
+            if (!nome) {
+                document.getElementById('result').innerText = "Por favor, digite um nome.";
+                return;
+            }
 
-    const response = await fetch('/login', {  // Alteração aqui!
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ nome: nome })
-    });
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome })
+            });
 
-    const data = await response.json();
+            const data = await response.json();
 
-    if (data.mensagem) {
-    // Redireciona para a página "desjogando.html" com os dados na URL
-    window.location.href = `/static/desjogando.html?nome=${nome}&saldo=${data.saldo}`;
-} else {
-        document.getElementById('result').innerText = "Erro ao fazer login.";
-    }
-}
-
+            if (data.mensagem) {
+                // Redireciona apenas com o nome (saldo será buscado na próxima página)
+                window.location.href = `/static/desjogando.html?nome=${nome}`;
+            } else {
+                document.getElementById('result').innerText = "Erro ao fazer login.";
+            }
+        }
     </script>
 </body>
 </html>

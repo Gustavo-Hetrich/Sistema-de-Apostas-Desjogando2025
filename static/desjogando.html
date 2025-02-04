@@ -13,6 +13,7 @@
             align-items: center;
             height: 100vh;
             background-color: #202325;
+            color: white;
         }
         .container {
             background-color: #ffffff;
@@ -20,6 +21,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
+            color: black;
         }
         .saldo {
             font-size: 20px;
@@ -30,21 +32,37 @@
 <body>
     <div class="container">
         <h2>Bem-vindo, <span id="username"></span>!</h2>
-        <p class="saldo">Saldo: <span id="saldo"></span> pontos</p>
+        <p class="saldo">Saldo: <span id="saldo">Carregando...</span> pontos</p>
     </div>
 
     <script>
-        // Pegando os parâmetros da URL
-        const params = new URLSearchParams(window.location.search);
-        const nome = params.get('nome');
-        const saldo = params.get('saldo');
+        async function carregarSaldo() {
+            const params = new URLSearchParams(window.location.search);
+            const nome = params.get('nome');
 
-        if (!nome || !saldo) {
-            document.body.innerHTML = "<h2>Erro: Usuário não encontrado.</h2>";
-        } else {
+            if (!nome) {
+                document.body.innerHTML = "<h2>Erro: Usuário não encontrado.</h2>";
+                return;
+            }
+
             document.getElementById('username').innerText = nome;
-            document.getElementById('saldo').innerText = saldo;
+
+            try {
+                const response = await fetch(`/saldo/${nome}`);
+                const data = await response.json();
+
+                if (data.saldo !== undefined) {
+                    document.getElementById('saldo').innerText = data.saldo;
+                } else {
+                    document.getElementById('saldo').innerText = "Erro ao carregar saldo.";
+                }
+            } catch (error) {
+                document.getElementById('saldo').innerText = "Erro na conexão.";
+            }
         }
+
+        // Carregar saldo ao entrar na página
+        carregarSaldo();
     </script>
 </body>
 </html>
