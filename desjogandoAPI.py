@@ -40,7 +40,7 @@ class Usuario(BaseModel):
 @app.on_event("startup")
 async def startup():
     conn = await connect_to_db()
-    await conn.execute('''
+    await conn.execute('''  
     CREATE TABLE IF NOT EXISTS usuarios (
         nome TEXT PRIMARY KEY,
         saldo INTEGER DEFAULT 100
@@ -79,3 +79,44 @@ async def saldo(nome: str):
     
     await conn.close()
     return {"nome": nome, "saldo": result["saldo"]}
+
+# Nova rota para listar todos os usuários e seus saldos
+@app.get("/usuarios")
+async def listar_usuarios():
+    conn = await connect_to_db()
+    
+    # Consulta para pegar todos os usuários e seus saldos
+    result = await conn.fetch('SELECT nome, saldo FROM usuarios')
+    
+    # Converte o resultado em uma lista de dicionários
+    usuarios = [{"nome": row["nome"], "saldo": row["saldo"]} for row in result]
+    
+    await conn.close()
+    
+    # Retorna a lista de usuários
+    return usuarios
+
+# Variável global para controlar o estado da aposta
+estado_aposta = 'não iniciada'
+
+@app.post("/aposta/iniciar")
+async def iniciar_aposta():
+    global estado_aposta
+    if estado_aposta == 'em andamento':
+        return {"erro": "Aposta já está em andamento."}
+    
+    estado_aposta = 'em andamento'
+    return {"status": "Aposta iniciada com sucesso."}
+
+@app.post("/aposta/finalizar")
+async def finalizar_aposta():
+    global estado_aposta
+    if estado_aposta == 'não iniciada':
+        return {"erro": "Nenhuma aposta em andamento."}
+    
+    estado_aposta = 'não iniciada'
+    return {"status": "Aposta finalizada com sucesso."}
+
+@app.get("/aposta/status")
+async def status_aposta():
+    return {"status": estado_aposta}

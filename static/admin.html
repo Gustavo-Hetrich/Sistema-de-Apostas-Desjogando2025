@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Administração - Apostas</title>
+    <style>
+        /* Estilos básicos */
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 600px;
+            margin: 0 auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Painel de Administração</h1>
+        <h3>Controle de Apostas</h3>
+
+        <!-- Tabela para exibir usuários -->
+        <h3>Usuários e Saldos</h3>
+        <table id="usuariosTable">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- A lista de usuários será preenchida aqui -->
+            </tbody>
+        </table>
+
+        <!-- Botões para iniciar e finalizar a aposta -->
+        <button id="iniciarApostaBtn">Iniciar Aposta</button>
+        <button id="finalizarApostaBtn" disabled>Finalizar Aposta</button>
+
+    </div>
+
+    <script>
+        // Função para carregar a lista de usuários
+        async function carregarUsuarios() {
+            try {
+                const response = await fetch('/usuarios');
+                const usuarios = await response.json();
+                const tableBody = document.querySelector('#usuariosTable tbody');
+                tableBody.innerHTML = ''; // Limpa a tabela antes de adicionar novos dados
+
+                usuarios.forEach(usuario => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${usuario.nome}</td><td>${usuario.saldo}</td>`;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+            }
+        }
+
+        // Função para iniciar e finalizar aposta
+        async function checkApostaStatus() {
+            try {
+                const response = await fetch('/aposta/status');
+                const data = await response.json();
+                const status = data.status;
+
+                if (status === 'em andamento') {
+                    document.getElementById('apostaStatus').innerText = 'Em Andamento';
+                    document.getElementById('iniciarApostaBtn').disabled = true;
+                    document.getElementById('finalizarApostaBtn').disabled = false;
+                } else {
+                    document.getElementById('apostaStatus').innerText = 'Não Iniciada';
+                    document.getElementById('iniciarApostaBtn').disabled = false;
+                    document.getElementById('finalizarApostaBtn').disabled = true;
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').innerText = 'Erro ao verificar o status da aposta.';
+            }
+        }
+
+        // Carregar os dados de usuários ao carregar a página
+        carregarUsuarios();
+        checkApostaStatus();
+    </script>
+
+</body>
+</html>
