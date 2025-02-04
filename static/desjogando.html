@@ -164,7 +164,7 @@
             document.getElementById('username').innerText = nomeUsuario;
 
             try {
-                const response = await fetch(`https://seu-servidor.com/saldo/${nomeUsuario}`);
+                const response = await fetch(`https://desjogando2025.onrender.com/${nomeUsuario}`);
 
                 if (!response.ok) {
                     throw new Error("Erro na resposta do servidor.");
