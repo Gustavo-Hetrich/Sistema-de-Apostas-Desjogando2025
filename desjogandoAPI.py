@@ -2,8 +2,18 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Dict
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
+
+# Servindo arquivos estáticos da pasta 'static'
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+async def read_index():
+    with open("static/index.html", "r") as f:
+        return f.read()
 
 # Adicionando o CORS para permitir chamadas de qualquer origem
 app.add_middleware(
