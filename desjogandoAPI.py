@@ -1,11 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 import asyncpg
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi import HTTPException
-
 
 app = FastAPI()
 
@@ -25,10 +23,10 @@ async def read_index():
 # Adicionando o CORS para permitir chamadas de qualquer origem
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Permite todas as origens
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Permite todos os métodos (GET, POST, etc.)
+    allow_headers=["*"],  # Permite todos os cabeçalhos
 )
 
 # Conectando ao PostgreSQL
@@ -39,6 +37,7 @@ async def connect_to_db():
 class Usuario(BaseModel):
     nome: str
 
+# Cria a tabela de usuários no banco de dados (se não existir)
 @app.on_event("startup")
 async def startup():
     conn = await connect_to_db()
@@ -50,6 +49,7 @@ async def startup():
     ''')
     await conn.close()
 
+# Rota para login do usuário
 @app.post("/login")
 async def login(usuario: Usuario):
     conn = await connect_to_db()
@@ -68,6 +68,7 @@ async def login(usuario: Usuario):
     await conn.close()
     return {"mensagem": f"Bem-vindo, {nome}!", "saldo": saldo}
 
+# Rota para consultar o saldo do usuário
 @app.get("/saldo/{nome}")
 async def saldo(nome: str):
     conn = await connect_to_db()
@@ -82,7 +83,7 @@ async def saldo(nome: str):
     await conn.close()
     return {"nome": nome, "saldo": result["saldo"]}
 
-# Nova rota para listar todos os usuários e seus saldos
+# Rota para listar todos os usuários e seus saldos
 @app.get("/usuarios")
 async def listar_usuarios():
     conn = await connect_to_db()
@@ -101,6 +102,7 @@ async def listar_usuarios():
 # Variável global para controlar o estado da aposta
 estado_aposta = 'não iniciada'
 
+# Rota para iniciar uma aposta
 @app.post("/aposta/iniciar")
 async def iniciar_aposta():
     global estado_aposta
@@ -110,6 +112,7 @@ async def iniciar_aposta():
     estado_aposta = 'em andamento'
     return {"status": "Aposta iniciada com sucesso."}
 
+# Rota para finalizar uma aposta
 @app.post("/aposta/finalizar")
 async def finalizar_aposta():
     global estado_aposta
@@ -119,10 +122,12 @@ async def finalizar_aposta():
     estado_aposta = 'não iniciada'
     return {"status": "Aposta finalizada com sucesso."}
 
+# Rota para verificar o status da aposta
 @app.get("/aposta/status")
 async def status_aposta():
     return {"status": estado_aposta}
 
+# Rota para fazer uma aposta
 @app.post("/apostar")
 async def apostar(nome: str, valor: int, escolha: int):
     conn = await connect_to_db()
