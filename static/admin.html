@@ -117,5 +117,124 @@
         checkApostaStatus();
     </script>
 
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Usuários</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #202325;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            color: black;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+
+        h2 {
+            color: #c70912;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #c70912;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .error-message {
+            color: red;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: #c70912;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #a3070e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Usuários e Saldos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Saldo</th>
+                </tr>
+            </thead>
+            <tbody id="userTable">
+                <tr><td colspan="2">Carregando...</td></tr>
+            </tbody>
+        </table>
+        <p id="error" class="error-message"></p>
+        <button onclick="carregarUsuarios()">Atualizar Dados</button>
+    </div>
+
+    <script>
+        async function carregarUsuarios() {
+            try {
+                const response = await fetch('/usuarios');
+
+                if (!response.ok) {
+                    throw new Error("Erro ao carregar os usuários.");
+                }
+
+                const data = await response.json();
+                const tabela = document.getElementById("userTable");
+                tabela.innerHTML = ""; 
+
+                data.forEach(user => {
+                    const row = `<tr><td>${user.nome}</td><td>${user.saldo}</td></tr>`;
+                    tabela.innerHTML += row;
+                });
+
+            } catch (error) {
+                document.getElementById("error").innerText = error.message;
+            }
+        }
+
+        // Carregar os dados ao abrir a página
+        carregarUsuarios();
+    </script>
+</body>
+</html>
+
+
 </body>
 </html>
