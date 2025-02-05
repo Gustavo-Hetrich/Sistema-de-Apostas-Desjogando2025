@@ -162,3 +162,11 @@ async def apostar(nome: str, valor: int, escolha: int):
     await conn.close()
 
     return {"mensagem": mensagem, "novo_saldo": novo_saldo}
+
+@app.get("/usuarios")
+async def listar_usuarios():
+    conn = await connect_to_db()
+    users = await conn.fetch("SELECT nome, saldo FROM usuarios")
+    await conn.close()
+    
+    return [{"nome": user["nome"], "saldo": user["saldo"]} for user in users]
