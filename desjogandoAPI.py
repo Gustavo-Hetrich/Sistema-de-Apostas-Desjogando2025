@@ -261,18 +261,39 @@ async def obter_totais_apostados():
 
 
 # Rota para verificar se o usuário ganhou
-@app.get("/verificar_ganhou")
-async def verificar_ganhou(nome: str):
+@app.post("/aposta/finalizar")
+async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
+    global estado_aposta
+    if estado_aposta == 'não iniciada':
+        return JSONResponse(content={"erro": "Nenhuma aposta em andamento."})
+    
+    estado_aposta = 'não iniciada'
+    vencedor = finalizar_aposta.vencedor
+    
     conn = await connect_to_db()
-    nome = nome.lower()
     
-    # Verifica se o usuário ganhou
-    result = await conn.fetchrow('SELECT valor FROM apostas WHERE nome=$1 AND ganhou=True', nome)
+    # Pega o saldo total das apostas
+    result = await conn.fetchrow('SELECT saldo_total FROM saldo_apostas WHERE id=1')
+    saldo_total = result["saldo_total"]
     
-    if result:
-        valor = result["valor"]
-        await conn.close()
-        return JSONResponse(content={"ganhou": True, "valor": valor})
+    # Pega todas as apostas no vencedor
+    apostas_vencedoras = await conn.fetch('SELECT nome, valor FROM apostas WHERE escolha=$1', vencedor)
+    
+    # Divide o saldo total entre todos os usuários que apostaram no vencedor
+    if apostas_vencedoras:
+        valor_por_usuario = saldo_total // len(apostas_vencedoras)
+        for aposta in apostas_vencedoras:
+            nome = aposta["nome"]
+            saldo_atual = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
+            novo_saldo = saldo_atual["saldo"] + valor_por_usuario
+            await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
+            await conn.execute('UPDATE apostas SET ganhou=TRUE WHERE nome=$1 AND escolha=$2', nome, vencedor)
+            print(f"Usuário {nome} ganhou a aposta.")  # Adiciona um log para verificar a atualização
+    
+    # Zera os totais apostados
+    await conn.execute('DELETE FROM apostas')
+    await conn.execute('UPDATE saldo_apostas SET saldo_total = 0 WHERE id = 1')
     
     await conn.close()
-    return JSONResponse(content={"ganhou": False})
+    
+    return JSONResponse(content={"status": "Aposta finalizada com sucesso."})
