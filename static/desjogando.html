@@ -128,7 +128,12 @@
 
         <!-- Novo container para apostas -->
         <div class="container">
+
+            <h2>Totais Apostados</h2>
+            <p>Apostado no 1: <span id="totalApostado1">0</span> pontos</p>
+            <p>Apostado no 2: <span id="totalApostado2">0</span> pontos</p>
             <h2>Fazer Aposta</h2>
+            
             <input type="number" id="valorAposta" placeholder="Digite o valor da aposta">
             
             <div class="aposta-container">
@@ -148,6 +153,7 @@
 
         <p id="error" class="error-message"></p>
     </div>
+
 
     <script>
         let nomeUsuario = "";
@@ -234,6 +240,24 @@
         }
 
         carregarSaldo();
+
+        async function atualizarTotaisApostados() {
+    try {
+        const response = await fetch('/totais_apostados');
+        if (!response.ok) {
+            throw new Error("Erro ao carregar os totais apostados.");
+        }
+
+        const data = await response.json();
+        document.getElementById('totalApostado1').innerText = data.totalApostado1;
+        document.getElementById('totalApostado2').innerText = data.totalApostado2;
+    } catch (error) {
+        console.error("Erro ao atualizar os totais apostados:", error);
+    }
+}
+
+// Atualiza os totais apostados a cada 3 segundos
+setInterval(atualizarTotaisApostados, 3000);
     </script>
 </body>
 </html>

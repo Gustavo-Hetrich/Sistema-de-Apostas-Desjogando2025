@@ -241,3 +241,15 @@ async def reset_db():
     ''')
     await conn.close()
     return JSONResponse(content={"mensagem": "Base de dados limpa com sucesso."})
+
+# Rota para obter os totais apostados
+@app.get("/totais_apostados")
+async def obter_totais_apostados():
+    conn = await connect_to_db()
+    
+    total_apostado1 = await conn.fetchval('SELECT COALESCE(SUM(valor), 0) FROM apostas WHERE escolha = 1')
+    total_apostado2 = await conn.fetchval('SELECT COALESCE(SUM(valor), 0) FROM apostas WHERE escolha = 2')
+    
+    await conn.close()
+    
+    return JSONResponse(content={"totalApostado1": total_apostado1, "totalApostado2": total_apostado2})
