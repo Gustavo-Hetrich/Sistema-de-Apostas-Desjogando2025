@@ -344,6 +344,76 @@ document.getElementById('finalizarApostaBtn').addEventListener('click', async ()
     }
 });
 
+document.getElementById('finalizarApostaBtn').addEventListener('click', async () => {
+    const vencedor1 = document.getElementById('vencedor1').checked;
+    const vencedor2 = document.getElementById('vencedor2').checked;
+
+    if (!vencedor1 && !vencedor2) {
+        alert('Selecione um vencedor.');
+        return;
+    }
+
+    const vencedor = vencedor1 ? 1 : 2;
+
+    try {
+        const response = await fetch('/aposta/finalizar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vencedor })
+        });
+        if (response.ok) {
+            document.getElementById('finalizarMensagem').style.display = 'block';
+            checkApostaStatus();
+
+            // Notifique os usuários sobre o resultado da aposta
+            await notificarResultadoAposta();
+        } else {
+            document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
+        }
+    } catch (error) {
+        document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
+    }
+});
+
+async function notificarResultadoAposta() {
+    try {
+        const response = await fetch('/usuarios');
+        const usuarios = await response.json();
+
+        for (const usuario of usuarios) {
+            const nome = usuario.nome;
+            const saldo = usuario.saldo;
+
+            // Verifica se o usuário ganhou ou perdeu
+            const ganhouResponse = await fetch(`/verificar_ganhou?nome=${nome}`);
+            const ganhouData = await ganhouResponse.json();
+            const resultadoDiv = document.getElementById('resultadoAposta');
+
+            if (ganhouData.ganhou) {
+                resultadoDiv.innerText = `Você ganhou ${ganhouData.valor} pontos!`;
+            } else {
+                const saldoResponse = await fetch(`/saldo/${nome}`);
+                const saldoData = await saldoResponse.json();
+                if (saldoData.saldo < saldoAnterior) {
+                    const pontosPerdidos = saldoAnterior - saldoData.saldo;
+                    resultadoDiv.innerText = `Você perdeu ${pontosPerdidos} pontos.`;
+                } else {
+                    resultadoDiv.innerText = "Você não ganhou desta vez.";
+                }
+            }
+
+            resultadoDiv.style.display = 'block';
+
+            // Faz a mensagem desaparecer depois de 5 segundos
+            setTimeout(() => {
+                resultadoDiv.style.display = 'none';
+            }, 5000);
+        }
+    } catch (error) {
+        console.error("Erro ao notificar resultado da aposta:", error);
+    }
+}
+
     </script>
 </body>
 </html
