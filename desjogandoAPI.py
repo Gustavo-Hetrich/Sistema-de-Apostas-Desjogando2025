@@ -149,43 +149,6 @@ async def iniciar_aposta():
     
     return JSONResponse(content={"status": "Aposta iniciada com sucesso."})
 
-# Rota para finalizar uma aposta
-@app.post("/aposta/finalizar")
-async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
-    global estado_aposta
-    if estado_aposta == 'não iniciada':
-        return JSONResponse(content={"erro": "Nenhuma aposta em andamento."})
-    
-    estado_aposta = 'não iniciada'
-    vencedor = finalizar_aposta.vencedor
-    
-    conn = await connect_to_db()
-    
-    # Pega o saldo total das apostas
-    result = await conn.fetchrow('SELECT saldo_total FROM saldo_apostas WHERE id=1')
-    saldo_total = result["saldo_total"]
-    
-    # Pega todas as apostas no vencedor
-    apostas_vencedoras = await conn.fetch('SELECT nome, valor FROM apostas WHERE escolha=$1', vencedor)
-    
-    # Divide o saldo total entre todos os usuários que apostaram no vencedor
-    if apostas_vencedoras:
-        valor_por_usuario = saldo_total // len(apostas_vencedoras)
-        for aposta in apostas_vencedoras:
-            nome = aposta["nome"]
-            saldo_atual = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
-            novo_saldo = saldo_atual["saldo"] + valor_por_usuario
-            await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
-            await conn.execute('UPDATE apostas SET ganhou=TRUE WHERE nome=$1 AND escolha=$2', nome, vencedor)
-    
-    # Zera os totais apostados
-    await conn.execute('DELETE FROM apostas')
-    await conn.execute('UPDATE saldo_apostas SET saldo_total = 0 WHERE id = 1')
-    
-    await conn.close()
-    
-    return JSONResponse(content={"status": "Aposta finalizada com sucesso."})
-
 # Rota para verificar o status da aposta
 @app.get("/aposta/status")
 async def status_aposta():
@@ -279,17 +242,25 @@ async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
     # Pega todas as apostas no vencedor
     apostas_vencedoras = await conn.fetch('SELECT nome, valor FROM apostas WHERE escolha=$1', vencedor)
     
-    # Divide o saldo total entre todos os usuários que apostaram no vencedor
-    if apostas_vencedoras:
-        valor_por_usuario = saldo_total // len(apostas_vencedoras)
+    # Calcula o total apostado pelos vencedores
+    total_apostado_pelos_vencedores = sum(aposta["valor"] for aposta in apostas_vencedoras)
+
+    # Distribui proporcionalmente o saldo total entre os vencedores
+    if total_apostado_pelos_vencedores > 0:
         for aposta in apostas_vencedoras:
             nome = aposta["nome"]
+            valor_apostado = aposta["valor"]
+            
+            # Cálculo proporcional: (valor_apostado / total_apostado_pelos_vencedores) * saldo_total
+            ganho = (valor_apostado / total_apostado_pelos_vencedores) * saldo_total
+
             saldo_atual = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
-            novo_saldo = saldo_atual["saldo"] + valor_por_usuario
+            novo_saldo = saldo_atual["saldo"] + int(ganho)  # Convertendo para inteiro para evitar valores fracionados
+            
+            # Atualiza o saldo do usuário
             await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
             await conn.execute('UPDATE apostas SET ganhou=TRUE WHERE nome=$1 AND escolha=$2', nome, vencedor)
-            print(f"Usuário {nome} ganhou a aposta.")  # Adiciona um log para verificar a atualização
-    
+
     # Zera os totais apostados
     await conn.execute('DELETE FROM apostas')
     await conn.execute('UPDATE saldo_apostas SET saldo_total = 0 WHERE id = 1')
@@ -297,3 +268,19 @@ async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
     await conn.close()
     
     return JSONResponse(content={"status": "Aposta finalizada com sucesso."})
+
+@app.get("/verificar_ganhou")
+async def verificar_ganhou(nome: str):
+    conn = await connect_to_db()
+    nome = nome.lower()
+    
+    # Verifica se o usuário ganhou
+    result = await conn.fetchrow('SELECT valor FROM apostas WHERE nome=$1 AND ganhou=True', nome)
+    
+    if result:
+        valor = result["valor"]
+        await conn.close()
+        return JSONResponse(content={"ganhou": True, "valor": valor})
+    
+    await conn.close()
+    return JSONResponse(content={"ganhou": False})
