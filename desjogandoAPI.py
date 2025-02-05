@@ -47,6 +47,12 @@ async def startup():
         saldo INTEGER DEFAULT 100
     );
     ''')
+    await conn.execute('''
+    CREATE TABLE IF NOT EXISTS saldo_apostas (
+        id SERIAL PRIMARY KEY,
+        saldo_total INTEGER DEFAULT 0
+    );
+    ''')
     await conn.close()
 
 # Rota para login do usuário
@@ -110,6 +116,12 @@ async def iniciar_aposta():
         return {"erro": "Aposta já está em andamento."}
     
     estado_aposta = 'em andamento'
+    
+    # Zera o saldo geral de apostas
+    conn = await connect_to_db()
+    await conn.execute('UPDATE saldo_apostas SET saldo_total = 0 WHERE id = 1')
+    await conn.close()
+    
     return {"status": "Aposta iniciada com sucesso."}
 
 # Rota para finalizar uma aposta
@@ -120,6 +132,25 @@ async def finalizar_aposta():
         return {"erro": "Nenhuma aposta em andamento."}
     
     estado_aposta = 'não iniciada'
+    
+    conn = await connect_to_db()
+    
+    # Pega o saldo total das apostas
+    result = await conn.fetchrow('SELECT saldo_total FROM saldo_apostas WHERE id=1')
+    saldo_total = result["saldo_total"]
+    
+    # Pega todos os usuários
+    usuarios = await conn.fetch('SELECT nome, saldo FROM usuarios')
+    
+    # Divide o saldo total entre todos os usuários
+    if usuarios:
+        valor_por_usuario = saldo_total // len(usuarios)
+        for usuario in usuarios:
+            novo_saldo = usuario["saldo"] + valor_por_usuario
+            await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, usuario["nome"])
+    
+    await conn.close()
+    
     return {"status": "Aposta finalizada com sucesso."}
 
 # Rota para verificar o status da aposta
@@ -146,29 +177,24 @@ async def apostar(nome: str, valor: int, escolha: int):
         await conn.close()
         raise HTTPException(status_code=400, detail="Saldo insuficiente.")
 
-    # Simula a lógica da aposta (aqui você pode implementar a lógica real)
-    import random
-    resultado_aposta = random.choice([1, 2])  # Escolhe aleatoriamente entre 1 e 2
-
-    if escolha == resultado_aposta:
-        novo_saldo = saldo_atual + valor  # Ganha o valor apostado
-        mensagem = f"Parabéns! Você ganhou {valor} pontos."
-    else:
-        novo_saldo = saldo_atual - valor  # Perde o valor apostado
-        mensagem = f"Que pena! Você perdeu {valor} pontos."
-
-    # Atualiza o saldo do usuário no banco de dados
+    # Subtrai o valor apostado do saldo do usuário
+    novo_saldo = saldo_atual - valor
     await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
+
+    # Adiciona o valor apostado ao saldo geral de apostas
+    result = await conn.fetchrow('SELECT saldo_total FROM saldo_apostas WHERE id=1')
+    saldo_total = result["saldo_total"] + valor
+    await conn.execute('UPDATE saldo_apostas SET saldo_total=$1 WHERE id=1', saldo_total)
+
     await conn.close()
 
-    return {"mensagem": mensagem, "novo_saldo": novo_saldo}
+    return {"mensagem": f"Aposta de {valor} pontos realizada com sucesso.", "novo_saldo": novo_saldo}
 
-@app.get("/usuarios")
-async def listar_usuarios():
-    conn = await connect_to_db()
-    users = await conn.fetch("SELECT nome, saldo FROM usuarios")
-    await conn.close()
+# Rota para listar todos os usuários e seus saldos (duplicada, removida)
+# @app.get("/usuarios")
+# async def listar_usuarios():
+#     conn = await connect_to_db()
+#     users = await conn.fetch("SELECT nome, saldo FROM usuarios")
+#     await conn.close()
     
-    return [{"nome": user["nome"], "saldo": user["saldo"]} for user in users]
-
-    
+#     return [{"nome": user["nome"], "saldo": user["saldo"]} for user in users]
