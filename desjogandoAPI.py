@@ -118,8 +118,8 @@ async def saldo(nome: str):
 async def listar_usuarios():
     conn = await connect_to_db()
     
-    # Consulta para pegar todos os usuários e seus saldos
-    result = await conn.fetch('SELECT nome, saldo FROM usuarios')
+    # Consulta para pegar todos os usuários e seus saldos, ordenados por saldo em ordem decrescente
+    result = await conn.fetch('SELECT nome, saldo FROM usuarios ORDER BY saldo DESC')
     
     # Converte o resultado em uma lista de dicionários
     usuarios = [{"nome": row["nome"], "saldo": row["saldo"]} for row in result]
