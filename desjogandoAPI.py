@@ -41,6 +41,12 @@ class Usuario(BaseModel):
 class FinalizarAposta(BaseModel):
     vencedor: int
 
+# Modelo de dados para fazer uma aposta
+class Aposta(BaseModel):
+    nome: str
+    valor: int
+    escolha: int
+
 # Cria a tabela de usuários no banco de dados (se não existir)
 @app.on_event("startup")
 async def startup():
@@ -182,9 +188,9 @@ async def status_aposta():
 
 # Rota para fazer uma aposta
 @app.post("/apostar")
-async def apostar(nome: str, valor: int, escolha: int):
+async def apostar(aposta: Aposta):
     conn = await connect_to_db()
-    nome = nome.lower()
+    nome = aposta.nome.lower()
 
     # Verifica se o usuário existe
     result = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
@@ -195,22 +201,22 @@ async def apostar(nome: str, valor: int, escolha: int):
     saldo_atual = result["saldo"]
 
     # Verifica se o saldo é suficiente para a aposta
-    if saldo_atual < valor:
+    if saldo_atual < aposta.valor:
         await conn.close()
         raise HTTPException(status_code=400, detail="Saldo insuficiente.")
 
     # Subtrai o valor apostado do saldo do usuário
-    novo_saldo = saldo_atual - valor
+    novo_saldo = saldo_atual - aposta.valor
     await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
 
     # Adiciona o valor apostado ao saldo geral de apostas
     result = await conn.fetchrow('SELECT saldo_total FROM saldo_apostas WHERE id=1')
-    saldo_total = result["saldo_total"] + valor
+    saldo_total = result["saldo_total"] + aposta.valor
     await conn.execute('UPDATE saldo_apostas SET saldo_total=$1 WHERE id=1', saldo_total)
 
     # Salva a aposta do usuário
-    await conn.execute('INSERT INTO apostas (nome, valor, escolha) VALUES ($1, $2, $3)', nome, valor, escolha)
+    await conn.execute('INSERT INTO apostas (nome, valor, escolha) VALUES ($1, $2, $3)', nome, aposta.valor, aposta.escolha)
 
     await conn.close()
 
-    return JSONResponse(content={"mensagem": f"Aposta de {valor} pontos realizada com sucesso.", "novo_saldo": novo_saldo})
+    return JSONResponse(content={"mensagem": f"Aposta de {aposta.valor} pontos realizada com sucesso.", "novo_saldo": novo_saldo})
