@@ -65,6 +65,12 @@ async def startup():
         escolha INTEGER
     );
     ''')
+    # Insere um registro inicial na tabela saldo_apostas se não existir
+    await conn.execute('''
+    INSERT INTO saldo_apostas (id, saldo_total)
+    VALUES (1, 0)
+    ON CONFLICT (id) DO NOTHING;
+    ''')
     await conn.close()
 
 # Rota para login do usuário

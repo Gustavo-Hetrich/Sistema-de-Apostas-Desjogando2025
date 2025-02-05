@@ -192,46 +192,46 @@
         }
 
         async function fazerAposta() {
-    const valor = document.getElementById('valorAposta').value;
-    const aposta1 = document.getElementById('aposta1').checked;
-    const aposta2 = document.getElementById('aposta2').checked;
+            const valor = document.getElementById('valorAposta').value;
+            const aposta1 = document.getElementById('aposta1').checked;
+            const aposta2 = document.getElementById('aposta2').checked;
 
-    if (!valor || valor <= 0) {
-        alert('Digite um valor válido para apostar.');
-        return;
-    }
+            if (!valor || valor <= 0) {
+                alert('Digite um valor válido para apostar.');
+                return;
+            }
 
-    if (!aposta1 && !aposta2) {
-        alert('Selecione uma opção para apostar.');
-        return;
-    }
+            if (!aposta1 && !aposta2) {
+                alert('Selecione uma opção para apostar.');
+                return;
+            }
 
-    const escolha = aposta1 ? 1 : 2;
+            const escolha = aposta1 ? 1 : 2;
 
-    try {
-        const response = await fetch("https://desjogando2025.onrender.com/apostar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                nome: nomeUsuario,
-                valor: parseInt(valor),
-                escolha: escolha
-            })
-        });
+            try {
+                const response = await fetch("https://desjogando2025.onrender.com/apostar", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        nome: nomeUsuario,
+                        valor: parseInt(valor),
+                        escolha: escolha
+                    })
+                });
 
-        const result = await response.json();
+                const result = await response.json();
 
-        if (!response.ok) {
-            throw new Error(result.detail || "Erro ao processar a aposta.");
+                if (!response.ok) {
+                    throw new Error(JSON.stringify(result));
+                }
+
+                alert(result.mensagem);
+                document.getElementById('saldo').innerText = result.novo_saldo;
+
+            } catch (error) {
+                alert("Erro: " + error.message);
+            }
         }
-
-        alert(result.mensagem);
-        document.getElementById('saldo').innerText = result.novo_saldo;
-
-    } catch (error) {
-        alert("Erro: " + error.message);
-    }
-}
 
         carregarSaldo();
     </script>
