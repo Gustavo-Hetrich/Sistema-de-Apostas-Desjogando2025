@@ -68,7 +68,8 @@ async def startup():
         id SERIAL PRIMARY KEY,
         nome TEXT,
         valor INTEGER,
-        escolha INTEGER
+        escolha INTEGER,
+        ganhou BOOLEAN DEFAULT FALSE
     );
     ''')
     # Insere um registro inicial na tabela saldo_apostas se não existir
@@ -150,7 +151,6 @@ async def iniciar_aposta():
     return JSONResponse(content={"status": "Aposta iniciada com sucesso."})
 
 # Rota para finalizar uma aposta
-# Rota para finalizar uma aposta
 @app.post("/aposta/finalizar")
 async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
     global estado_aposta
@@ -177,7 +177,7 @@ async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
             saldo_atual = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
             novo_saldo = saldo_atual["saldo"] + valor_por_usuario
             await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
-            await conn.execute('UPDATE apostas SET ganhou=True WHERE nome=$1 AND escolha=$2', nome, vencedor)
+            await conn.execute('UPDATE apostas SET ganhou=TRUE WHERE nome=$1 AND escolha=$2', nome, vencedor)
     
     # Zera os totais apostados
     await conn.execute('DELETE FROM apostas')
