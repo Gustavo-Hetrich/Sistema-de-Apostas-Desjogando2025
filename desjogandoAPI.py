@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
-import asyncpg
-from pydantic import BaseModel
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+import asyncpg
 
 app = FastAPI()
 
@@ -37,6 +37,10 @@ async def connect_to_db():
 class Usuario(BaseModel):
     nome: str
 
+# Modelo de dados para finalizar aposta
+class FinalizarAposta(BaseModel):
+    vencedor: int
+
 # Cria a tabela de usuários no banco de dados (se não existir)
 @app.on_event("startup")
 async def startup():
@@ -51,6 +55,14 @@ async def startup():
     CREATE TABLE IF NOT EXISTS saldo_apostas (
         id SERIAL PRIMARY KEY,
         saldo_total INTEGER DEFAULT 0
+    );
+    ''')
+    await conn.execute('''
+    CREATE TABLE IF NOT EXISTS apostas (
+        id SERIAL PRIMARY KEY,
+        nome TEXT,
+        valor INTEGER,
+        escolha INTEGER
     );
     ''')
     await conn.close()
@@ -72,7 +84,7 @@ async def login(usuario: Usuario):
         saldo = result["saldo"]
     
     await conn.close()
-    return {"mensagem": f"Bem-vindo, {nome}!", "saldo": saldo}
+    return JSONResponse(content={"mensagem": f"Bem-vindo, {nome}!", "saldo": saldo})
 
 # Rota para consultar o saldo do usuário
 @app.get("/saldo/{nome}")
@@ -84,10 +96,10 @@ async def saldo(nome: str):
     
     if result is None:
         await conn.close()
-        return {"erro": "Usuário não encontrado"}
+        return JSONResponse(content={"erro": "Usuário não encontrado"})
     
     await conn.close()
-    return {"nome": nome, "saldo": result["saldo"]}
+    return JSONResponse(content={"nome": nome, "saldo": result["saldo"]})
 
 # Rota para listar todos os usuários e seus saldos
 @app.get("/usuarios")
@@ -103,7 +115,7 @@ async def listar_usuarios():
     await conn.close()
     
     # Retorna a lista de usuários
-    return usuarios
+    return JSONResponse(content=usuarios)
 
 # Variável global para controlar o estado da aposta
 estado_aposta = 'não iniciada'
@@ -113,25 +125,27 @@ estado_aposta = 'não iniciada'
 async def iniciar_aposta():
     global estado_aposta
     if estado_aposta == 'em andamento':
-        return {"erro": "Aposta já está em andamento."}
+        return JSONResponse(content={"erro": "Aposta já está em andamento."})
     
     estado_aposta = 'em andamento'
     
-    # Zera o saldo geral de apostas
+    # Zera o saldo geral de apostas e limpa as apostas anteriores
     conn = await connect_to_db()
     await conn.execute('UPDATE saldo_apostas SET saldo_total = 0 WHERE id = 1')
+    await conn.execute('DELETE FROM apostas')
     await conn.close()
     
-    return {"status": "Aposta iniciada com sucesso."}
+    return JSONResponse(content={"status": "Aposta iniciada com sucesso."})
 
 # Rota para finalizar uma aposta
 @app.post("/aposta/finalizar")
-async def finalizar_aposta():
+async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
     global estado_aposta
     if estado_aposta == 'não iniciada':
-        return {"erro": "Nenhuma aposta em andamento."}
+        return JSONResponse(content={"erro": "Nenhuma aposta em andamento."})
     
     estado_aposta = 'não iniciada'
+    vencedor = finalizar_aposta.vencedor
     
     conn = await connect_to_db()
     
@@ -139,24 +153,26 @@ async def finalizar_aposta():
     result = await conn.fetchrow('SELECT saldo_total FROM saldo_apostas WHERE id=1')
     saldo_total = result["saldo_total"]
     
-    # Pega todos os usuários
-    usuarios = await conn.fetch('SELECT nome, saldo FROM usuarios')
+    # Pega todas as apostas no vencedor
+    apostas_vencedoras = await conn.fetch('SELECT nome, valor FROM apostas WHERE escolha=$1', vencedor)
     
-    # Divide o saldo total entre todos os usuários
-    if usuarios:
-        valor_por_usuario = saldo_total // len(usuarios)
-        for usuario in usuarios:
-            novo_saldo = usuario["saldo"] + valor_por_usuario
-            await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, usuario["nome"])
+    # Divide o saldo total entre todos os usuários que apostaram no vencedor
+    if apostas_vencedoras:
+        valor_por_usuario = saldo_total // len(apostas_vencedoras)
+        for aposta in apostas_vencedoras:
+            nome = aposta["nome"]
+            saldo_atual = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
+            novo_saldo = saldo_atual["saldo"] + valor_por_usuario
+            await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
     
     await conn.close()
     
-    return {"status": "Aposta finalizada com sucesso."}
+    return JSONResponse(content={"status": "Aposta finalizada com sucesso."})
 
 # Rota para verificar o status da aposta
 @app.get("/aposta/status")
 async def status_aposta():
-    return {"status": estado_aposta}
+    return JSONResponse(content={"status": estado_aposta})
 
 # Rota para fazer uma aposta
 @app.post("/apostar")
@@ -186,15 +202,9 @@ async def apostar(nome: str, valor: int, escolha: int):
     saldo_total = result["saldo_total"] + valor
     await conn.execute('UPDATE saldo_apostas SET saldo_total=$1 WHERE id=1', saldo_total)
 
+    # Salva a aposta do usuário
+    await conn.execute('INSERT INTO apostas (nome, valor, escolha) VALUES ($1, $2, $3)', nome, valor, escolha)
+
     await conn.close()
 
-    return {"mensagem": f"Aposta de {valor} pontos realizada com sucesso.", "novo_saldo": novo_saldo}
-
-# Rota para listar todos os usuários e seus saldos (duplicada, removida)
-# @app.get("/usuarios")
-# async def listar_usuarios():
-#     conn = await connect_to_db()
-#     users = await conn.fetch("SELECT nome, saldo FROM usuarios")
-#     await conn.close()
-    
-#     return [{"nome": user["nome"], "saldo": user["saldo"]} for user in users]
+    return JSONResponse(content={"mensagem": f"Aposta de {valor} pontos realizada com sucesso.", "novo_saldo": novo_saldo})
