@@ -27,7 +27,10 @@ app.add_middleware(
 async def connect_to_db():
     return await asyncpg.connect(DATABASE_URL)
 
-# Modelo de aposta
+# Modelos de dados
+class Usuario(BaseModel):
+    nome: str
+
 class Aposta(BaseModel):
     nome: str
     valor: int
