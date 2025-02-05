@@ -282,6 +282,28 @@ async function verificarGanhou() {
 // Verifica se o usuário ganhou ao carregar a página
 verificarGanhou();
 
+async function atualizarSaldo() {
+    try {
+        const response = await fetch(`https://desjogando2025.onrender.com/saldo/${nomeUsuario}`);
+        if (!response.ok) {
+            throw new Error("Erro na resposta do servidor.");
+        }
+
+        const data = await response.json();
+        if (data.saldo !== undefined) {
+            document.getElementById('saldo').innerText = data.saldo;
+        } else {
+            throw new Error("Saldo não encontrado.");
+        }
+    } catch (error) {
+        document.getElementById('saldo').innerText = "Erro";
+        document.getElementById("error").innerText = error.message;
+    }
+}
+
+// Atualiza o saldo a cada 3 segundos
+setInterval(atualizarSaldo, 3000);
+
     </script>
 </body>
 </html>
