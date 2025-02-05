@@ -189,6 +189,10 @@ async def status_aposta():
 # Rota para fazer uma aposta
 @app.post("/apostar")
 async def apostar(aposta: Aposta):
+    global estado_aposta
+    if estado_aposta != 'em andamento':
+        raise HTTPException(status_code=400, detail="Nenhuma aposta em andamento.")
+    
     conn = await connect_to_db()
     nome = aposta.nome.lower()
 
