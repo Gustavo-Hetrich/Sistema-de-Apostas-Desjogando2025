@@ -224,3 +224,19 @@ async def apostar(aposta: Aposta):
     await conn.close()
 
     return JSONResponse(content={"mensagem": f"Aposta de {aposta.valor} pontos realizada com sucesso.", "novo_saldo": novo_saldo})
+
+# Rota para resetar o banco de dados
+@app.post("/reset")
+async def reset_db():
+    conn = await connect_to_db()
+    await conn.execute('DELETE FROM usuarios')
+    await conn.execute('DELETE FROM saldo_apostas')
+    await conn.execute('DELETE FROM apostas')
+    # Reinserir o registro inicial na tabela saldo_apostas
+    await conn.execute('''
+    INSERT INTO saldo_apostas (id, saldo_total)
+    VALUES (1, 0)
+    ON CONFLICT (id) DO NOTHING;
+    ''')
+    await conn.close()
+    return JSONResponse(content={"mensagem": "Base de dados limpa com sucesso."})

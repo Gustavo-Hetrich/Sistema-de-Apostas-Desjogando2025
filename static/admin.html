@@ -266,6 +266,8 @@
         </table>
         <p id="error" class="error-message"></p>
         <button onclick="carregarUsuarios()">Atualizar Dados</button>
+        <!-- Botão para limpar a base de dados -->
+        <button id="limparBaseBtn">Limpar Base de Dados</button>
     </div>
 
     <script>
@@ -293,6 +295,24 @@
 
         // Carregar os dados ao abrir a página
         carregarUsuarios();
+
+        document.getElementById('limparBaseBtn').addEventListener('click', async () => {
+    const confirmacao = confirm('Tem certeza que deseja limpar a base de dados? Esta ação não pode ser desfeita.');
+    if (!confirmacao) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/reset', { method: 'POST' });
+        if (response.ok) {
+            alert('Base de dados limpa com sucesso.');
+        } else {
+            document.getElementById('errorMessage').innerText = 'Erro ao limpar a base de dados.';
+        }
+    } catch (error) {
+        document.getElementById('errorMessage').innerText = 'Erro ao limpar a base de dados.';
+    }
+});
     </script>
 </body>
 </html
