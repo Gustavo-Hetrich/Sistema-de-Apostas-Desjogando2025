@@ -103,6 +103,8 @@
         <!-- Botões para iniciar e finalizar a aposta -->
         <button id="iniciarApostaBtn">Iniciar Aposta</button>
         <button id="finalizarApostaBtn" disabled>Finalizar Aposta</button>
+        <p id="finalizarMensagem" class="success-message" style="display: none;">Aposta finalizada!</p>
+
 
         <!-- Checkboxes para selecionar o vencedor -->
         <div class="checkbox-group">
@@ -313,6 +315,35 @@
         document.getElementById('errorMessage').innerText = 'Erro ao limpar a base de dados.';
     }
 });
+
+document.getElementById('finalizarApostaBtn').addEventListener('click', async () => {
+    const vencedor1 = document.getElementById('vencedor1').checked;
+    const vencedor2 = document.getElementById('vencedor2').checked;
+
+    if (!vencedor1 && !vencedor2) {
+        alert('Selecione um vencedor.');
+        return;
+    }
+
+    const vencedor = vencedor1 ? 1 : 2;
+
+    try {
+        const response = await fetch('/aposta/finalizar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vencedor })
+        });
+        if (response.ok) {
+            document.getElementById('finalizarMensagem').style.display = 'block';
+            checkApostaStatus();
+        } else {
+            document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
+        }
+    } catch (error) {
+        document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
+    }
+});
+
     </script>
 </body>
 </html

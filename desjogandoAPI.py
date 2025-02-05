@@ -253,3 +253,20 @@ async def obter_totais_apostados():
     await conn.close()
     
     return JSONResponse(content={"totalApostado1": total_apostado1, "totalApostado2": total_apostado2})
+
+# Rota para verificar se o usuário ganhou
+@app.get("/verificar_ganhou")
+async def verificar_ganhou(nome: str):
+    conn = await connect_to_db()
+    nome = nome.lower()
+    
+    # Verifica se o usuário ganhou
+    result = await conn.fetchrow('SELECT valor FROM apostas WHERE nome=$1 AND ganhou=True', nome)
+    
+    if result:
+        valor = result["valor"]
+        await conn.close()
+        return JSONResponse(content={"ganhou": True, "valor": valor})
+    
+    await conn.close()
+    return JSONResponse(content={"ganhou": False})

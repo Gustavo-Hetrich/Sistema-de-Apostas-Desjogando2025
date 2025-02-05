@@ -124,6 +124,7 @@
         <div class="container">
             <h2>Bem-vindo, <span id="username"></span>!</h2>
             <p class="saldo">Saldo: <span id="saldo">Carregando...</span> pontos</p>
+            <p id="ganhouMensagem" class="success-message" style="display: none;"></p>
         </div>
 
         <!-- Novo container para apostas -->
@@ -133,7 +134,7 @@
             <p>Apostado no 1: <span id="totalApostado1">0</span> pontos</p>
             <p>Apostado no 2: <span id="totalApostado2">0</span> pontos</p>
             <h2>Fazer Aposta</h2>
-            
+
             <input type="number" id="valorAposta" placeholder="Digite o valor da aposta">
             
             <div class="aposta-container">
@@ -258,6 +259,29 @@
 
 // Atualiza os totais apostados a cada 3 segundos
 setInterval(atualizarTotaisApostados, 3000);
+
+async function verificarGanhou() {
+    try {
+        const response = await fetch(`/verificar_ganhou?nome=${nomeUsuario}`);
+        const data = await response.json();
+        if (data.ganhou) {
+            const ganhouMensagem = document.getElementById('ganhouMensagem');
+            ganhouMensagem.innerText = `Você ganhou ${data.valor} pontos!`;
+            ganhouMensagem.style.display = 'block';
+            
+            // Faz a mensagem desaparecer depois de 5 segundos
+            setTimeout(() => {
+                ganhouMensagem.style.display = 'none';
+            }, 5000);
+        }
+    } catch (error) {
+        console.error("Erro ao verificar se ganhou:", error);
+    }
+}
+
+// Verifica se o usuário ganhou ao carregar a página
+verificarGanhou();
+
     </script>
 </body>
 </html>
