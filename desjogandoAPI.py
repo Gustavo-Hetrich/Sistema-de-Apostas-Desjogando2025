@@ -54,7 +54,7 @@ async def startup():
     await conn.execute('''  
     CREATE TABLE IF NOT EXISTS usuarios (
         nome TEXT PRIMARY KEY,
-        saldo INTEGER DEFAULT 100
+        saldo INTEGER DEFAULT 500
     );
     ''')
     await conn.execute('''
@@ -89,9 +89,9 @@ async def login(usuario: Usuario):
     result = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
     
     if result is None:
-        # Se o usuário não existir, cria o usuário com saldo inicial de 100
-        await conn.execute('INSERT INTO usuarios (nome, saldo) VALUES ($1, $2)', nome, 100)
-        saldo = 100
+        # Se o usuário não existir, cria o usuário com saldo inicial de 500
+        await conn.execute('INSERT INTO usuarios (nome, saldo) VALUES ($1, $2)', nome, 500)
+        saldo = 500
     else:
         saldo = result["saldo"]
     
