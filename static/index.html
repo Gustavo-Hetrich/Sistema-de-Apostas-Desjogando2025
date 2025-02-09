@@ -12,7 +12,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-image: URL('static/images/bkground.png');
+            background-image: URL('/static/images/bkground.png');
             background-size: cover;
             background-position: center; 
             background-repeat: no-repeat;
@@ -24,9 +24,23 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin: 8px 0;
+            font-weight: 500;
+            margin-bottom: 20px;
+            margin-top: -12px;
+        }
+
         input {
             padding: 10px;
-            margin: 10px 0;
+            margin-bottom: 10px 0;
             width: 90%;
             border: 1px solid #ccc;
             border-radius: 5px;
@@ -39,6 +53,8 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin-bottom: 10px;
+            margin-top: 20px;
         }
         button:hover {
             background-color: #b30810;
@@ -52,6 +68,7 @@
 <body>
     <div class="container">
         <h2>Desjogando</h2>
+        <h3>Escolha um nickname </h3>
         <input type="text" id="nome" placeholder="Digite seu nome" />
         <button onclick="login()">Entrar</button>
         <div class="result" id="result"></div>
