@@ -200,15 +200,25 @@ async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
 async def status_aposta():
     return JSONResponse(content={"status": estado_aposta})
 
+
+# Variável global para armazenar as apostas dos usuários
+apostas_usuarios = {}
+
 # Rota para fazer uma aposta
 @app.post("/apostar")
 async def apostar(aposta: Aposta):
-    global estado_aposta
+    global estado_aposta, apostas_usuarios
+
     if estado_aposta != 'em andamento':
         raise HTTPException(status_code=400, detail="Nenhuma aposta em andamento.")
-    
+
     conn = await connect_to_db()
     nome = aposta.nome.lower()
+
+    # Verifica se o usuário já fez uma aposta
+    if nome in apostas_usuarios:
+        await conn.close()
+        raise HTTPException(status_code=400, detail="Você já fez uma aposta e não pode apostar novamente.")
 
     # Verifica se o usuário existe
     result = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
@@ -235,14 +245,17 @@ async def apostar(aposta: Aposta):
     # Salva a aposta do usuário
     await conn.execute('INSERT INTO apostas (nome, valor, escolha) VALUES ($1, $2, $3)', nome, aposta.valor, aposta.escolha)
 
+    # Armazena a aposta do usuário na variável global
+    apostas_usuarios[nome] = aposta.escolha
+
     await conn.close()
 
     return JSONResponse(content={"mensagem": f"Aposta de {aposta.valor} pontos realizada com sucesso.", "novo_saldo": novo_saldo})
 
-# Rota para resetar o banco de dados
-# Rota para resetar o banco de dados
+# Rota para resetar o banco de dados e limpar as apostas dos usuários
 @app.post("/reset")
 async def reset_db():
+    global apostas_usuarios
     conn = await connect_to_db()
     await conn.execute('DELETE FROM apostas')
     await conn.execute('DELETE FROM usuarios')
@@ -254,6 +267,8 @@ async def reset_db():
     ON CONFLICT (id) DO NOTHING;
     ''')
     await conn.close()
+    # Limpa as apostas dos usuários
+    apostas_usuarios = {}
     return JSONResponse(content={"mensagem": "Base de dados limpa com sucesso."})
 
 # Rota para obter os totais apostados
