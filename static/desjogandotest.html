@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <title>Desjogando - Área do Usuário</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            
+            font-family: 'roboto', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,6 +16,7 @@
             color: rgb(255, 255, 255);
         }
         
+
         .body-container {
             display: flex;
             flex-direction: column;
@@ -27,18 +28,118 @@
             background-color: #ffffff;
             display: flex;
             flex-direction: column;
-            align-items: center;
+            border-radius: 100px 0 0 0;
+            align-items:baseline;
             padding: 30px;
-            border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: center;
             color: black;
             width: 300px;
+            z-index: 2;
+
+        
         }
 
-        .saldo {
-            font-size: 20px;
-            margin-top: 10px;
+        .redcontainer {
+            background-color: #C62034;
+            width: 360px;
+            height: 600px;
+            position: absolute;
+            z-index: 1;
+            
+        }
+
+        .redcontainer2 {
+            background-color: #C62034;
+            width: 360px;
+            height: 10px;
+            z-index: 1;
+        }
+
+        h2 {
+            color: #C62034;
+            font-size: 16px;
+            z-index: 2;
+            margin-top: 20px;
+            margin-bottom: 1px;
+            font-family: 'roboto', sans-serif;
+            font-size: 16px;
+            font-weight: 800;
+            margin-bottom: 0 ;
+        }
+
+        .texto {
+            font-size: 24px;
+            font-weight: 500;
+            font-family: 'roboto', sans-serif;
+            color: #202325;
+            text-align: left;
+            margin-top: -1px;
+        }
+        
+
+        #saldo {
+            font-size: 24px;
+            color: #202325;
+            text-align: left;
+            font-family: 'roboto', sans-serif;
+            font-weight: 800;
+            margin-top: -1px;
+
+        }
+
+        #username {
+            font-size: 24px;
+            color: #202325;
+            text-align: left;
+            font-family: 'roboto', sans-serif;
+            font-weight: 800;
+            margin-top: -1px;
+        }
+
+        .linebox {
+            width: 100%;
+            height: 140px;
+            border: 2px solid #283043;
+            background-color: transparent;
+            border-radius: 8px;
+            display: flex;
+            margin-top: 20px;
+
+            
+        }
+
+        .aposta-info {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column; /* Stack items vertically */
+            gap: 50px;
+            width: 100%;
+        }
+
+        .aposta-info p {
+            display: flex;
+            justify-content: space-between; /* Push text to left and points to right */
+            align-items: center;
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+            width: 100%;
+            margin-left: 10px;
+        }
+
+        #totalApostado1, #totalApostado2 {
+            border-radius: 75px;
+            width: 55px;  
+            height: 25px; 
+            background-color: #C62034;
+            color: white; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 20px;
         }
 
         .error-message {
@@ -49,8 +150,9 @@
         input {
             padding: 10px;
             margin: 10px 0;
+            height: 35px;
             width: 90%;
-            border: 1px solid #ccc;
+            border: 1px solid #283043;
             border-radius: 5px;
             font-size: 16px;
             text-align: center;
@@ -81,7 +183,7 @@
             appearance: none;
             width: 20px;
             height: 20px;
-            border: 2px solid #c70912;
+            border: 2px solid #C62034;
             border-radius: 5px;
             display: flex;
             align-items: center;
@@ -91,7 +193,7 @@
         }
 
         .checkbox-label input:checked {
-            background-color: #c70912;
+            background-color: #C62034;
         }
 
         .checkbox-label input:checked::after {
@@ -105,7 +207,7 @@
         button {
             padding: 10px;
             width: 100%;
-            background-color: #c70912;
+            background-color: #C62034;
             color: white;
             border: none;
             border-radius: 5px;
@@ -119,6 +221,8 @@
         }
 
 
+
+
     </style>
 </head>
 <body>
@@ -130,17 +234,26 @@
     
         <!-- bem vindo -->
     <div class="body-container">
+        <div class="redcontainer"></div>
+        <div class="redcontainer2"></div>
         <div class="container">
-            <h2>Bem-vindo, <span id="username"></span>!</h2>
-            <p class="saldo">Saldo: <span id="saldo">Carregando...</span> pontos</p>
+            <h2>Bem-vindo! <br></h2>
+            <p id="username">Gustavo</p>
+        
+            <h2> Seus Pontos: <br></h2>
+            <p id="saldo">500</p>
 
 
         <!-- Novo container para apostas -->
 
             <h2>Totais Apostados</h2>
-            <p>Apostado no 1: <span id="totalApostado1">0</span> pontos</p>
-            <p>Apostado no 2: <span id="totalApostado2">0</span> pontos</p>
-            <h2>Fazer Aposta</h2>
+    <div class="linebox">
+        <div class="aposta-info">
+            <p>Jogador 1 <span id="totalApostado1">500</span> </p>
+            <p>Jogador 2 <span id="totalApostado2">500</span> </p>
+        </div>
+    </div>
+            <h2>Aposte suas fichas 😎</h2>
 
             <input type="number" id="valorAposta" placeholder="Digite o valor da aposta">
             
