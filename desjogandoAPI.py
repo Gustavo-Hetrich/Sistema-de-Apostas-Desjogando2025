@@ -165,7 +165,7 @@ estado_aposta = 'não iniciada'
 # Rota para iniciar uma aposta
 @app.post("/aposta/iniciar")
 async def iniciar_aposta():
-    global estado_aposta
+    global estado_aposta, apostas_usuarios
     if estado_aposta == 'em andamento':
         return JSONResponse(content={"erro": "Aposta já está em andamento."})
     
@@ -177,12 +177,15 @@ async def iniciar_aposta():
     await conn.execute('DELETE FROM apostas')
     await conn.close()
     
+    # Limpa as apostas dos usuários
+    apostas_usuarios = {}
+    
     return JSONResponse(content={"status": "Aposta iniciada com sucesso."})
 
 # Rota para finalizar uma aposta
 @app.post("/aposta/finalizar")
 async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
-    global estado_aposta
+    global estado_aposta, apostas_usuarios
     if estado_aposta == 'não iniciada':
         return JSONResponse(content={"erro": "Nenhuma aposta em andamento."})
     
@@ -222,6 +225,9 @@ async def finalizar_aposta(finalizar_aposta: FinalizarAposta):
     await conn.execute('UPDATE saldo_apostas SET saldo_total = 0 WHERE id = 1')
     
     await conn.close()
+    
+    # Reset apostas_usuarios dictionary
+    apostas_usuarios = {}
     
     return JSONResponse(content={"status": "Aposta finalizada com sucesso."})
 
@@ -285,7 +291,7 @@ async def apostar(aposta: Aposta):
 # Rota para resetar o banco de dados e limpar as apostas dos usuários
 @app.post("/reset")
 async def reset_db():
-    global apostas_usuarios
+    global apostas_usuarios, estado_aposta
     conn = await connect_to_db()
     await conn.execute('DELETE FROM apostas')
     await conn.execute('DELETE FROM usuarios')
@@ -299,6 +305,7 @@ async def reset_db():
     await conn.close()
     # Limpa as apostas dos usuários
     apostas_usuarios = {}
+    estado_aposta = 'não iniciada'
     return JSONResponse(content={"mensagem": "Base de dados limpa com sucesso."})
 
 # Rota para obter os totais apostados
