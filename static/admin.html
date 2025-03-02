@@ -20,6 +20,7 @@
             text-align: center;
             width: 400px;
             margin: 0 auto;
+            margin-bottom: 30px;
         }
 
         button {
@@ -44,6 +45,11 @@
 
         .error {
             color: red;
+            font-weight: bold;
+        }
+
+        .success {
+            color: green;
             font-weight: bold;
         }
 
@@ -87,6 +93,31 @@
             color: white;
             font-weight: bold;
         }
+
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin: 5px;
+            width: 70%;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        .notificacao {
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .oculto {
+            opacity: 0;
+        }
     </style>
 </head>
 <body>
@@ -119,6 +150,43 @@
         </div>
 
         <p id="errorMessage" class="error"></p>
+    </div>
+
+    <!-- Nova seção para adicionar pontos a usuários -->
+    <div class="container">
+        <h2>Adicionar Pontos a Usuários</h2>
+        
+        <div class="form-group">
+            <input type="text" id="nomeUsuarioInput" placeholder="Nome do usuário" required>
+        </div>
+        
+        <div class="form-group">
+            <input type="number" id="pontosInput" placeholder="Quantidade de pontos" min="1" required>
+        </div>
+        
+        <button id="adicionarPontosBtn">Adicionar Pontos</button>
+        
+        <!-- Notificação de resultado -->
+        <div id="notificacaoAddPontos" class="notificacao oculto"></div>
+    </div>
+
+    <div class="container">
+        <h2>Usuários e Saldos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Saldo</th>
+                </tr>
+            </thead>
+            <tbody id="userTable">
+                <tr><td colspan="2">Carregando...</td></tr>
+            </tbody>
+        </table>
+        <p id="error" class="error-message"></p>
+        <button onclick="carregarUsuarios()">Atualizar Dados</button>
+        <!-- Botão para limpar a base de dados -->
+        <button id="limparBaseBtn">Limpar Base de Dados</button>
     </div>
 
     <script>
@@ -173,7 +241,9 @@
                     body: JSON.stringify({ vencedor })
                 });
                 if (response.ok) {
+                    document.getElementById('finalizarMensagem').style.display = 'block';
                     checkApostaStatus();
+                    carregarUsuarios(); // Atualiza a lista de usuários após finalizar a aposta
                 } else {
                     document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
                 }
@@ -181,6 +251,62 @@
                 document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
             }
         });
+
+        // Função para adicionar pontos a um usuário
+        document.getElementById('adicionarPontosBtn').addEventListener('click', async () => {
+            const nome = document.getElementById('nomeUsuarioInput').value.trim();
+            const pontos = parseInt(document.getElementById('pontosInput').value);
+            const notificacao = document.getElementById('notificacaoAddPontos');
+            
+            if (!nome) {
+                mostrarNotificacao(notificacao, 'Por favor, insira o nome do usuário.', 'error');
+                return;
+            }
+            
+            if (isNaN(pontos) || pontos <= 0) {
+                mostrarNotificacao(notificacao, 'Por favor, insira uma quantidade válida de pontos.', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/adicionar-pontos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome, pontos })
+                });
+                
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    mostrarNotificacao(notificacao, data.mensagem, 'success');
+                    // Limpar os campos após sucesso
+                    document.getElementById('nomeUsuarioInput').value = '';
+                    document.getElementById('pontosInput').value = '';
+                    // Atualizar a tabela de usuários
+                    carregarUsuarios();
+                } else {
+                    mostrarNotificacao(notificacao, data.mensagem || 'Erro ao adicionar pontos.', 'error');
+                }
+            } catch (error) {
+                mostrarNotificacao(notificacao, 'Erro ao adicionar pontos. Tente novamente.', 'error');
+            }
+        });
+
+        // Função para mostrar notificação temporária
+        function mostrarNotificacao(elemento, mensagem, tipo) {
+            elemento.textContent = mensagem;
+            elemento.className = `notificacao ${tipo === 'success' ? 'success' : 'error'}`;
+            
+            // Mostra a notificação
+            setTimeout(() => {
+                elemento.classList.remove('oculto');
+            }, 10);
+            
+            // Esconde a notificação após 5 segundos
+            setTimeout(() => {
+                elemento.classList.add('oculto');
+            }, 5000);
+        }
 
         function selecionarVencedor(opcao) {
             if (opcao === 1) {
@@ -190,89 +316,6 @@
             }
         }
 
-        // Verifica o status da aposta ao carregar a página
-        checkApostaStatus();
-    </script>
-
-    <title>Painel Administrativo - Usuários</title>
-    <style>
-        .container {
-            background-color: #ffffff;
-            color: black;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-            margin: 50px auto;
-        }
-
-        h2 {
-            color: #000000;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-
-        th {
-            background-color: #c70912;
-            color: white;
-        }
-
-        tr:hover {
-            background-color: #f5f5f5;
-        }
-
-        .error-message {
-            color: red;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        button {
-            background-color: #c70912;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background-color: #a3070e;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Usuários e Saldos</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Saldo</th>
-                </tr>
-            </thead>
-            <tbody id="userTable">
-                <tr><td colspan="2">Carregando...</td></tr>
-            </tbody>
-        </table>
-        <p id="error" class="error-message"></p>
-        <button onclick="carregarUsuarios()">Atualizar Dados</button>
-        <!-- Botão para limpar a base de dados -->
-        <button id="limparBaseBtn">Limpar Base de Dados</button>
-    </div>
-
-    <script>
         async function carregarUsuarios() {
             try {
                 const response = await fetch('/usuarios');
@@ -295,125 +338,70 @@
             }
         }
 
-        // Carregar os dados ao abrir a página
-        carregarUsuarios();
-
+        // Botão para limpar a base de dados
         document.getElementById('limparBaseBtn').addEventListener('click', async () => {
-    const confirmacao = confirm('Tem certeza que deseja limpar a base de dados? Esta ação não pode ser desfeita.');
-    if (!confirmacao) {
-        return;
-    }
-
-    try {
-        const response = await fetch('/reset', { method: 'POST' });
-        if (response.ok) {
-            alert('Base de dados limpa com sucesso.');
-        } else {
-            document.getElementById('errorMessage').innerText = 'Erro ao limpar a base de dados.';
-        }
-    } catch (error) {
-        document.getElementById('errorMessage').innerText = 'Erro ao limpar a base de dados.';
-    }
-});
-
-document.getElementById('finalizarApostaBtn').addEventListener('click', async () => {
-    const vencedor1 = document.getElementById('vencedor1').checked;
-    const vencedor2 = document.getElementById('vencedor2').checked;
-
-    if (!vencedor1 && !vencedor2) {
-        alert('Selecione um vencedor.');
-        return;
-    }
-
-    const vencedor = vencedor1 ? 1 : 2;
-
-    try {
-        const response = await fetch('/aposta/finalizar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vencedor })
-        });
-        if (response.ok) {
-            document.getElementById('finalizarMensagem').style.display = 'block';
-            checkApostaStatus();
-        } else {
-            document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
-        }
-    } catch (error) {
-        document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
-    }
-});
-
-document.getElementById('finalizarApostaBtn').addEventListener('click', async () => {
-    const vencedor1 = document.getElementById('vencedor1').checked;
-    const vencedor2 = document.getElementById('vencedor2').checked;
-
-    if (!vencedor1 && !vencedor2) {
-        alert('Selecione um vencedor.');
-        return;
-    }
-
-    const vencedor = vencedor1 ? 1 : 2;
-
-    try {
-        const response = await fetch('/aposta/finalizar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ vencedor })
-        });
-        if (response.ok) {
-            document.getElementById('finalizarMensagem').style.display = 'block';
-            checkApostaStatus();
-
-            // Notifique os usuários sobre o resultado da aposta
-            await notificarResultadoAposta();
-        } else {
-            document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
-        }
-    } catch (error) {
-        document.getElementById('errorMessage').innerText = 'Erro ao finalizar aposta.';
-    }
-});
-
-async function notificarResultadoAposta() {
-    try {
-        const response = await fetch('/usuarios');
-        const usuarios = await response.json();
-
-        for (const usuario of usuarios) {
-            const nome = usuario.nome;
-            const saldo = usuario.saldo;
-
-            // Verifica se o usuário ganhou ou perdeu
-            const ganhouResponse = await fetch(`/verificar_ganhou?nome=${nome}`);
-            const ganhouData = await ganhouResponse.json();
-            const resultadoDiv = document.getElementById('resultadoAposta');
-
-            if (ganhouData.ganhou) {
-                resultadoDiv.innerText = `Você ganhou ${ganhouData.valor} pontos!`;
-            } else {
-                const saldoResponse = await fetch(`/saldo/${nome}`);
-                const saldoData = await saldoResponse.json();
-                if (saldoData.saldo < saldoAnterior) {
-                    const pontosPerdidos = saldoAnterior - saldoData.saldo;
-                    resultadoDiv.innerText = `Você perdeu ${pontosPerdidos} pontos.`;
-                } else {
-                    resultadoDiv.innerText = "Você não ganhou desta vez.";
-                }
+            const confirmacao = confirm('Tem certeza que deseja limpar a base de dados? Esta ação não pode ser desfeita.');
+            if (!confirmacao) {
+                return;
             }
 
-            resultadoDiv.style.display = 'block';
+            try {
+                const response = await fetch('/reset', { method: 'POST' });
+                if (response.ok) {
+                    alert('Base de dados limpa com sucesso.');
+                    carregarUsuarios(); // Atualiza a lista de usuários após limpar a base
+                } else {
+                    document.getElementById('errorMessage').innerText = 'Erro ao limpar a base de dados.';
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').innerText = 'Erro ao limpar a base de dados.';
+            }
+        });
 
-            // Faz a mensagem desaparecer depois de 5 segundos
-            setTimeout(() => {
-                resultadoDiv.style.display = 'none';
-            }, 5000);
+        async function notificarResultadoAposta() {
+            try {
+                const response = await fetch('/usuarios');
+                const usuarios = await response.json();
+
+                for (const usuario of usuarios) {
+                    const nome = usuario.nome;
+                    const saldo = usuario.saldo;
+
+                    // Verifica se o usuário ganhou ou perdeu
+                    const ganhouResponse = await fetch(`/verificar_ganhou?nome=${nome}`);
+                    const ganhouData = await ganhouResponse.json();
+                    const resultadoDiv = document.getElementById('resultadoAposta');
+
+                    if (ganhouData.ganhou) {
+                        resultadoDiv.innerText = `Você ganhou ${ganhouData.valor} pontos!`;
+                    } else {
+                        const saldoResponse = await fetch(`/saldo/${nome}`);
+                        const saldoData = await saldoResponse.json();
+                        if (saldoData.saldo < saldoAnterior) {
+                            const pontosPerdidos = saldoAnterior - saldoData.saldo;
+                            resultadoDiv.innerText = `Você perdeu ${pontosPerdidos} pontos.`;
+                        } else {
+                            resultadoDiv.innerText = "Você não ganhou desta vez.";
+                        }
+                    }
+
+                    resultadoDiv.style.display = 'block';
+
+                    // Faz a mensagem desaparecer depois de 5 segundos
+                    setTimeout(() => {
+                        resultadoDiv.style.display = 'none';
+                    }, 5000);
+                }
+            } catch (error) {
+                console.error("Erro ao notificar resultado da aposta:", error);
+            }
         }
-    } catch (error) {
-        console.error("Erro ao notificar resultado da aposta:", error);
-    }
-}
 
+        // Verifica o status da aposta ao carregar a página
+        checkApostaStatus();
+        
+        // Carrega os usuários ao abrir a página
+        carregarUsuarios();
     </script>
 </body>
-</html
+</html>

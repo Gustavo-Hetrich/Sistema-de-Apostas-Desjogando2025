@@ -47,6 +47,11 @@ class Aposta(BaseModel):
     valor: int
     escolha: int
 
+# Modelo de dados para adicionar pontos a um usuário
+class AdicionarPontos(BaseModel):
+    nome: str
+    pontos: int
+
 # Cria a tabela de usuários no banco de dados (se não existir)
 @app.on_event("startup")
 async def startup():
@@ -112,6 +117,31 @@ async def saldo(nome: str):
     
     await conn.close()
     return JSONResponse(content={"nome": nome, "saldo": result["saldo"]})
+
+# Nova rota para adicionar pontos a um usuário
+@app.post("/adicionar-pontos")
+async def adicionar_pontos(dados: AdicionarPontos):
+    conn = await connect_to_db()
+    nome = dados.nome.lower()
+    pontos = dados.pontos
+    
+    # Verifica se o usuário existe
+    result = await conn.fetchrow('SELECT saldo FROM usuarios WHERE nome=$1', nome)
+    
+    if result is None:
+        # Se o usuário não existir, cria o usuário com o saldo sendo os pontos fornecidos
+        await conn.execute('INSERT INTO usuarios (nome, saldo) VALUES ($1, $2)', nome, pontos)
+        novo_saldo = pontos
+        mensagem = f"Usuário {nome} criado com {pontos} pontos."
+    else:
+        # Se o usuário existir, adiciona os pontos ao saldo atual
+        saldo_atual = result["saldo"]
+        novo_saldo = saldo_atual + pontos
+        await conn.execute('UPDATE usuarios SET saldo=$1 WHERE nome=$2', novo_saldo, nome)
+        mensagem = f"{pontos} pontos adicionados para {nome}."
+    
+    await conn.close()
+    return JSONResponse(content={"sucesso": True, "mensagem": mensagem, "novo_saldo": novo_saldo})
 
 # Rota para listar todos os usuários e seus saldos
 @app.get("/usuarios")
