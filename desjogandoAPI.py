@@ -8,7 +8,7 @@ import asyncpg
 app = FastAPI()
 
 # Configuração do banco de dados
-DATABASE_URL = "postgresql://desjogandosql_user:isUyPC80jvkVlcE5iA4YboRmFqJRPAtM@dpg-cuh4kd0gph6c73dknn10-a.oregon-postgres.render.com/desjogandosql"
+DATABASE_URL = "postgresql://desjogandodb_user:BXbBkf9Rez43Nh4kbywfjVKgJisYX10w@dpg-cvkl6nd6ubrc73fqgosg-a/desjogandodb"
 
 # Servindo arquivos estáticos da pasta 'static'
 app.mount("/static", StaticFiles(directory="static"), name="static")
