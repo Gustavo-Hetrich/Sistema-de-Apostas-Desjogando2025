@@ -8,6 +8,8 @@
         body {
             text-align: center;
             font-family: Arial, sans-serif;
+            background: black;
+            color: white;
         }
         .container {
             display: flex;
@@ -43,6 +45,7 @@
             background: url('images/BG-carta.png') no-repeat center/cover;
             color: white;
             font-size: 16px;
+            border: 2px solid red;
         }
         .card .back {
             background: white;
@@ -52,27 +55,30 @@
             padding: 5px;
             box-sizing: border-box;
             text-align: center;
-            border: 2px solid black;
+            border: 2px solid red;
+        }
+        h2 {
+            color: red;
+            text-shadow: 2px 2px 5px rgba(255, 0, 0, 0.5);
         }
     </style>
 </head>
 <body>
 
-    <h2>Escolha um jogo</h2>
+    <h2>Escolha uma Carta</h2>
     <div class="container" id="gameContainer"></div>
 
-    <h2 style="display:none;" id="modTitle">Agora escolha um modificador</h2>
+    <h2 style="display:none;" id="modTitle">Agora Escolha um Modificador</h2>
     <div class="container" id="modContainer" style="display:none;"></div>
 
     <script>
         let games = [
             { name: "Cooking Simulator", mods: [] },
-            { name: "Minecraft", mods: [] },
-            { name: "Controle Dividido", mods: ["Mario Kart", "Mario Party", "Mortal Kombat", "Rounds"] },
-            { name: "Tottaly Accurate Battle Simulator", mods: [] },
+            { name: "Minecraft Preto e Branco", mods: [] },
+            { name: "Controle Dividido", mods: ["Mario Kart", "Mario Party", "Ultimate Chicken Horse"] },
+            { name: "The Crew - Random Placement", mods: [] },
             { name: "Jogos Vendados", mods: ["Mario Kart", "Mario Party", "Suika Game"] },
-            { name: "Tela Rodando", mods: ["Mario Kart", "Mario Party", "Rounds"] },
-            { name: "Baldur's Gate", mods: [] }
+            { name: "Tela Rodando", mods: ["Mario Kart", "Mario Party", "Suika Game"] },
         ];
 
         function shuffleArray(array) {
@@ -88,11 +94,9 @@
             let card = document.createElement("div");
             card.classList.add("card");
             
-            // A frente da carta (sem texto)
             let front = document.createElement("div");
             front.classList.add("front");
             
-            // O verso da carta (com o texto do jogo)
             let back = document.createElement("div");
             back.classList.add("back");
             back.textContent = game.name;
@@ -108,25 +112,22 @@
         });
 
         function revealGame(card, game) {
-            // Vira a carta
             card.classList.add("flip");
             
             if (game.mods.length > 0) {
                 setTimeout(() => {
                     modTitle.style.display = "block";
                     modContainer.style.display = "flex";
-                    modContainer.innerHTML = ""; // Limpa modificadores anteriores
+                    modContainer.innerHTML = "";
 
                     let shuffledMods = shuffleArray([...game.mods]);
                     shuffledMods.forEach(mod => {
                         let modCard = document.createElement("div");
                         modCard.classList.add("card");
                         
-                        // A frente da carta (sem texto)
                         let front = document.createElement("div");
                         front.classList.add("front");
                         
-                        // O verso da carta (com o texto do modificador)
                         let back = document.createElement("div");
                         back.classList.add("back");
                         back.textContent = mod;
